@@ -206,7 +206,7 @@ class Analyzer:
 
     def analyze(self, result: str, f: Frame, frame: int) -> 'Analysis':
         division = f.division_img().gray().find_match(self.divisions)
-        if division <= 3: # <= plat
+        if division is not None and division <= 3: # <= plat
             rank_img = f.rank_low_img()
         else:
             rank_img = f.rank_high_img()
