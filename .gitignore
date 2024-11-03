@@ -1,1 +1,8 @@
 *.txt
+__pycache__/
+*.prof
+*.svg
+/videos/
+/dumps/
+.ipynb_checkpoints/
+*.ipynb
