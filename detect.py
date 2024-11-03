@@ -35,9 +35,25 @@ def oneshot(filename):
 @cli.command()
 @click.argument('filename')
 @click.argument('output')
-def extract_rank(filename: str, output: str):
+def extract_high_rank(filename: str, output: str):
     f = Frame.from_file(filename)
-    f.rank_img().gray().save(output)
+    f.rank_high_img().gray().save(output)
+
+
+@cli.command()
+@click.argument('filename')
+@click.argument('output')
+def extract_low_rank(filename: str, output: str):
+    f = Frame.from_file(filename)
+    f.rank_low_img().gray().save(output)
+
+
+@cli.command()
+@click.argument('filename')
+@click.argument('output')
+def extract_division(filename: str, output: str):
+    f = Frame.from_file(filename)
+    f.division_img().gray().save(output)
 
 
 @dataclass
@@ -61,8 +77,14 @@ class Frame:
     def result_img(self) -> 'Frame':
         return Frame(self.f[21:30,10:39,:])
 
-    def rank_img(self) -> 'Frame':
+    def division_img(self) -> 'Frame':
+        return Frame(self.f[48:82,123:162,:])
+
+    def rank_high_img(self) -> 'Frame':
         return Frame(self.f[92:99,140:145,:])
+
+    def rank_low_img(self) -> 'Frame':
+        return Frame(self.f[88:95,140:145,:])
 
     def progress_img(self) -> 'Frame':
         return Frame(self.f[128:129,70:215,:])
@@ -105,12 +127,12 @@ class Frame:
         s = cv2.minMaxLoc(m)[1]
         return s > 0.8
 
-    def find_rank(self, ranks) -> int | None:
-        for i, rank_img in enumerate(ranks):
-            if rank_img is None:
+    def find_match(self, templates) -> int | None:
+        for i, template in enumerate(templates):
+            if template is None:
                 continue
-            if self.matches(rank_img):
-                return i+1
+            if self.matches(template):
+                return i
 
     def find_result(self, templates) -> str:
         for name, template in templates.items():
@@ -140,6 +162,7 @@ class Analyzer:
         self.dump = dump
         self.results = load_results()
         self.ranks = load_ranks()
+        self.divisions = load_divisions()
         self.skip = int(fps * skip_secs)
         # Define the color range for white
         self.lower_white = np.array([200, 200, 200], dtype=np.uint8)
@@ -182,9 +205,14 @@ class Analyzer:
         return f.result_img().gray().find_result(self.results)
 
     def analyze(self, result: str, f: Frame, frame: int) -> 'Analysis':
-        rank = f.rank_img().gray().find_rank(self.ranks)
+        division = f.division_img().gray().find_match(self.divisions)
+        if division <= 3: # <= plat
+            rank_img = f.rank_low_img()
+        else:
+            rank_img = f.rank_high_img()
+        rank = rank_img.gray().find_match(self.ranks) + 1
         progress = f.progress_img().progress(self)
-        return Analysis(self.fps, result, rank, progress, frame, f)
+        return Analysis(self.fps, result, division, rank, progress, frame, f)
 
     def oneshot(self, f: Frame) -> 'Analysis':
         result = f.result_img().gray().find_result(self.results)
@@ -195,13 +223,17 @@ class Analyzer:
 class Analysis:
     fps: float
     result: str
+    division: int
     rank: int
     progress: int
     frame: int
     f: Frame
 
     def output(self):
-        print(f'{self.timestr()}\t{self.result}\t{self.rank}\t{self.progress}%', flush=True)
+        print(f'{self.timestr()}\t{self.result}\t{self.divname()}\t{self.rank}\t{self.progress}%', flush=True)
+
+    def divname(self) -> str:
+        return div_names()[self.division]
 
     def timestr(self) -> str:
         secs = int(self.frame / self.fps % 60)
@@ -217,6 +249,12 @@ def save_rank(n_frame: int, rank: int):
 
 def sec_to_frame(sec: float) -> int:
     return int(sec * 30)
+
+def div_names():
+    return ['bronze', 'silver', 'gold', 'platinum', 'diamons', 'master', 'grandmaster', 'champion']
+
+def load_divisions() -> list[np.array]:
+    return [cv2.imread(f'divisions/{div}.bmp', 0) for div in div_names()]
 
 def load_ranks() -> list[np.array]:
     return [cv2.imread(f'ranks/{rank}.bmp', 0) for rank in range(1,6)]

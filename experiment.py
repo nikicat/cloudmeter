@@ -26,6 +26,12 @@ def __(Frame):
 
 
 @app.cell
+def __(Frame):
+    gm4d = Frame.from_file('./samples/gm4-defeat-2.bmp')
+    return (gm4d,)
+
+
+@app.cell
 def __(np):
     # Define the color range for white
     lower_white = np.array([200, 200, 200], dtype=np.uint8)
@@ -82,12 +88,35 @@ def __(cv2, f, mo):
     return
 
 
-app._unparsable_cell(
-    r"""
-    np.max(cv2.findNonZero(cv2.threshold(f.progress_img().gray().f, 150, 255, cv2.THRESH_BINARY)[1])
-    """,
-    name="__"
-)
+@app.cell
+def __():
+    def division_img(f):
+        return f.f[48:82,123:162,:]
+    return (division_img,)
+
+
+@app.cell
+def __(Frame, division_img, mo):
+    mo.image(division_img(Frame.from_file('samples/plat4-defeat.bmp')), width=50)
+    return
+
+
+@app.cell
+def __(Frame, division_img, mo):
+    mo.image(division_img(Frame.from_file('samples/gm4-defeat.bmp')), width=50)
+    return
+
+
+@app.cell
+def __(Frame, mo):
+    mo.image(Frame.from_file('samples/plat4-defeat.bmp').f[88:95,140:145,:], width=50)
+    return
+
+
+@app.cell
+def __(Frame, mo):
+    mo.image(Frame.from_file('samples/gm4-defeat.bmp').rank_img().f, width=50)
+    return
 
 
 @app.cell
@@ -250,20 +279,6 @@ def __(f_vict, get_progress_img, mo):
 @app.cell
 def __(rank_progres):
     rank_progres()
-    return
-
-
-@app.cell
-def __(binary, f_vict, get_progress_img, gray, mo):
-    vict_pr_gray = gray(get_progress_img(f_vict))
-    vict_pr_binary = binary(vict_pr_gray)
-    mo.image(vict_pr_binary, width=700)
-    return vict_pr_binary, vict_pr_gray
-
-
-@app.cell
-def __(rank_progres, vict_pr_binary):
-    rank_progres(vict_pr_binary)
     return
 
 
