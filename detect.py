@@ -32,6 +32,14 @@ def oneshot(filename):
     a.oneshot(f).output()
 
 
+@cli.command()
+@click.argument('filename')
+@click.argument('output')
+def extract_rank(filename: str, output: str):
+    f = Frame.from_file(filename)
+    f.rank_img().gray().save(output)
+
+
 @dataclass
 class Frame:
     f: np.array
