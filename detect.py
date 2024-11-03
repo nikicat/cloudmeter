@@ -235,7 +235,7 @@ class Analysis:
         print(f'{self.timestr()}\t{self.result}\t{self.divname()}\t{self.rank}\t{self.progress}%', flush=True)
 
     def divname(self) -> str:
-        return div_names()[self.division]
+        return '?' if self.division is None else div_names()[self.division]
 
     def timestr(self) -> str:
         secs = int(self.frame / self.fps % 60)
