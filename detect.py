@@ -210,7 +210,9 @@ class Analyzer:
             rank_img = f.rank_low_img()
         else:
             rank_img = f.rank_high_img()
-        rank = rank_img.gray().find_match(self.ranks) + 1
+        rank = rank_img.gray().find_match(self.ranks)
+        if rank is not None:
+            rank += 1
         progress = f.progress_img().progress(self)
         return Analysis(self.fps, result, division, rank, progress, frame, f)
 
@@ -251,7 +253,7 @@ def sec_to_frame(sec: float) -> int:
     return int(sec * 30)
 
 def div_names():
-    return ['bronze', 'silver', 'gold', 'platinum', 'diamons', 'master', 'grandmaster', 'champion']
+    return ['bronze', 'silver', 'gold', 'platinum', 'diamond', 'master', 'grandmaster', 'champion']
 
 def load_divisions() -> list[np.array]:
     return [cv2.imread(f'divisions/{div}.bmp', 0) for div in div_names()]
